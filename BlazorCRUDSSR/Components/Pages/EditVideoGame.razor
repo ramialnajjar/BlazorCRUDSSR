@@ -1,0 +1,102 @@
+﻿@page "/edit-game" 
+@page "/edit-game/{Id:int}"
+@inject DataContext Context;
+
+@if (Id is null)
+{
+	<PageTitle>Add a New Video Game</PageTitle>
+	<h3>Add a New Video Game</h3>
+}
+else
+{
+	<PageTitle>Edit "@CurrentGame.Title"</PageTitle>
+	<h3>Edit "@CurrentGame.Title"</h3>
+}
+
+<EditForm Enhance Model="CurrentGame" OnSubmit="HandleSubmit" FormName="GameForm">
+	<div>
+		<label for="title">Title</label>
+		<InputText id="title" @bind-Value = "CurrentGame.Title" class="form-control"/>
+	</div>
+	<div>
+		<label for="publisher">Publisher</label>
+		<InputText id="publisher" @bind-Value = "CurrentGame.Publisher" class="form-control"/>
+	</div>
+	<div>
+		<label for="releaseYear">Release Year</label>
+		<InputNumber id="releaseYear" @bind-Value = " CurrentGame.ReleaseYear" class="form-control" />
+	</div>
+	<button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
+
+<p>@status </p>
+
+@code {
+	[Parameter]
+	public int? Id { get; set; } = null;
+
+	[SupplyParameterFromForm]
+	public VideoGame CurrentGame { get; set; } = new();
+
+	private string status = string.Empty;
+
+	protected override async Task OnParametersSetAsync()
+	{
+		var game = await Context.VideoGames.FindAsync(Id);
+		if(Id is not null)
+		{
+			CurrentGame.Title ??= game.Title;
+			CurrentGame.Publisher ??= game.Publisher;
+			CurrentGame.ReleaseYear ??= game.ReleaseYear;
+		}
+	}
+
+	async Task HandleSubmit()
+	{
+		if (Id is not null)
+		{
+			await UpdateGame();
+		}
+		else
+		{
+			await CreateGame();
+		}
+	}
+
+	async Task UpdateGame()
+	{
+		var dbGame = await Context.VideoGames.FindAsync(Id);
+
+		if (dbGame is not null)
+		{
+			dbGame.Title = CurrentGame.Title;
+			dbGame.Publisher = CurrentGame.Publisher;
+			dbGame.ReleaseYear = CurrentGame.ReleaseYear;
+
+			var result = await Context.SaveChangesAsync();
+
+			if (result == 1)
+			{
+				status = "Game Updated Successfully!";
+			}
+			else
+			{
+				status = "Something went Wrong... :/";
+			}
+		}
+	}
+
+	async Task CreateGame()
+	{
+		Context.VideoGames.Add(CurrentGame);
+		var result = await Context.SaveChangesAsync();
+		if(result ==1)
+		{
+			status = "Game added Successfully!";
+		}
+		else
+		{
+			status = "Something went Wrong... :/";
+		}
+	}
+}

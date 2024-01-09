@@ -1,0 +1,70 @@
+﻿@page "/games"
+@inject DataContext Context
+@inject NavigationManager NavigationManager
+@attribute [StreamRendering]
+
+
+<PageTitle>Video Games</PageTitle>
+<h3>Video Games</h3>
+
+@if (videoGames.Count == 0)
+{
+	<p><em>Loading Video Games...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Publisher</th>
+				<th>Release Year</th>
+				<th></th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach(var game in videoGames){
+				<tr>
+					<td>@game.Title</td>
+					<td>@game.Publisher</td>
+					<td>@game.ReleaseYear</td>
+					<td><a href="edit-game/@game.Id">Edit</a></td>
+					<td>
+						<form method = "post" data-enhance
+							@formname = "@($"DeleteGameForm{game.Id}")"
+							@onsubmit="() => DeleteGame(game.Id)">
+							<button class="btn btn-link">
+								Delete
+							</button>
+							<AntiforgeryToken />
+						</form>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+<a href="/edit-game">Add Video Game</a>
+
+@code {
+	List<VideoGame> videoGames = new List<VideoGame>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		//await Task.Delay(1000); if you wanna add a delay loading to the data 
+		videoGames = await Context.VideoGames.ToListAsync();
+	}
+
+	async Task DeleteGame(int Id)
+	{
+		var dbGame = await Context.VideoGames.FindAsync(Id);
+		if(dbGame is not null)
+		{
+			Context.Remove(dbGame);
+			await Context.SaveChangesAsync();
+			videoGames = await Context.VideoGames.ToListAsync();
+		}
+	}
+}
